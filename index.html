@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel TV Jamildo 2026 - Guia Eleitoral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --jamildo-orange: #f83d03;
+            --jamildo-blue: #024796;
+            --color-joao: #facc15; 
+            --color-raquel: #1d4ed8; 
+            --color-ivan: #a855f7; 
+            --color-pl: #4b5563; 
+            --screen-bg: #050505;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .tv-wrapper {
+            width: 100%;
+            max-width: 1000px;
+            perspective: 1200px;
+        }
+
+        .tv-chassis {
+            background: linear-gradient(145deg, #1f2937, #0f172a);
+            border: 8px solid #374151;
+            border-radius: 3rem;
+            padding: 1.5rem;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .screen-container {
+            background: var(--screen-bg);
+            border-radius: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            border: 14px solid #000;
+            aspect-ratio: 16 / 10;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.1;
+        }
+
+        .channel-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            background: #1e293b;
+            border: 3px solid #334155;
+            color: #94a3b8;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 4px 4px 0 #000;
+            position: relative;
+        }
+
+        .channel-btn.active {
+            background: var(--jamildo-orange);
+            color: white;
+            border-color: #ff7e5f;
+            box-shadow: 0 0 30px rgba(248, 61, 3, 0.4);
+            transform: translate(2px, 2px);
+        }
+
+        .view-pane {
+            display: none;
+            height: 100%;
+            width: 100%;
+            padding: 1.5rem;
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .view-pane.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .avatar-label {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+        }
+
+        .avatar-label.show { opacity: 1; }
+
+        .avatar-img {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+            object-fit: cover;
+            background: #222;
+        }
+
+        .diff-banner {
+            background: var(--jamildo-orange);
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 900;
+            box-shadow: 0 4px 15px rgba(248, 61, 3, 0.4);
+            text-transform: uppercase;
+        }
+
+        .party-bubble {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 900;
+            position: absolute;
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.2);
+            z-index: 40;
+            opacity: 0;
+        }
+
+        .instruction-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.95);
+            padding: 12px 0;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--jamildo-orange);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 110;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .tv-chassis { padding: 0.75rem; border-radius: 2rem; }
+            .screen-container { border-width: 8px; aspect-ratio: 9 / 16; }
+            .channel-btn { width: 50px; height: 50px; }
+            .avatar-img { width: 50px; height: 50px; }
+            .view-pane { padding: 1rem; padding-bottom: 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tv-wrapper">
+        <div class="tv-chassis">
+            
+            <div class="flex justify-center mb-4">
+                <img src="https://jamildo.com/media/uploads/brancologojamildo_6xe6mA0.png" alt="Jamildo.com" class="h-10 md:h-14 object-contain">
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 md:gap-8">
+                
+                <div class="flex-grow relative">
+                    <div class="screen-container" id="tvScreen">
+                        <div class="screen-overlay"></div>
+
+                        <!-- CANAL 01: MAPA DE ALIANÇAS -->
+                        <div id="pane1" class="view-pane active">
+                            <div class="flex justify-between items-start mb-6">
+                                <h2 class="text-sm md:text-xl font-black text-white italic uppercase tracking-widest">Canal 01: Alianças</h2>
+                                <span class="bg-red-600 text-[10px] px-2 py-1 font-bold rounded animate-pulse italic">2026 LIVE</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-4 gap-2 text-center mb-8 relative z-50">
+                                <div id="box-joao" class="flex flex-col items-center">
+                                    <div class="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-yellow-400 mb-2 bg-zinc-800 overflow-hidden shadow-xl">
+                                        <img src="joao-campos.jpg" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/facc15/000?text=JC'">
+                                    </div>
+                                    <span class="text-[9px] font-black uppercase text-yellow-400">João</span>
+                                    <div id="sum-joao" class="text-xs md:text-sm font-mono font-bold text-white">0m 0s</div>
+                                </div>
+                                <div id="box-raquel" class="flex flex-col items-center">
+                                    <div class="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-blue-600 mb-2 bg-zinc-800 overflow-hidden shadow-xl">
+                                        <img src="raquel-lyra.webp" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/1d4ed8/fff?text=RL'">
+                                    </div>
+                                    <span class="text-[9px] font-black uppercase text-blue-400">Raquel</span>
+                                    <div id="sum-raquel" class="text-xs md:text-sm font-mono font-bold text-white">0m 0s</div>
+                                </div>
+                                <div id="box-ivan" class="flex flex-col items-center">
+                                    <div class="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-purple-600 mb-2 bg-zinc-800 overflow-hidden shadow-xl">
+                                        <img src="ivan-moraes.jpeg" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/a855f7/fff?text=IM'">
+                                    </div>
+                                    <span class="text-[9px] font-black uppercase text-purple-400">Ivan</span>
+                                    <div id="sum-ivan" class="text-xs md:text-sm font-mono font-bold text-white">0m 0s</div>
+                                </div>
+                                <div id="box-none" class="flex flex-col items-center">
+                                    <div class="w-14 h-14 md:w-20 md:h-20 rounded-full border-4 border-zinc-600 mb-2 bg-zinc-800 flex items-center justify-center shadow-xl">
+                                        <span class="text-zinc-500 font-black text-xl italic">PL</span>
+                                    </div>
+                                    <span class="text-[9px] font-black uppercase text-zinc-400">Indep.</span>
+                                    <div id="sum-none" class="text-xs md:text-sm font-mono font-bold text-white">0m 0s</div>
+                                </div>
+                            </div>
+
+                            <div id="particleCanvas" class="flex-grow relative border-t border-white/5 overflow-hidden">
+                                <!-- Bolinhas via JS -->
+                            </div>
+                        </div>
+
+                        <!-- CANAL 02: PROPORÇÃO PIZZA -->
+                        <div id="pane2" class="view-pane">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-sm md:text-xl font-black text-white italic uppercase tracking-widest">Canal 02: Proporção</h2>
+                                <div id="diffTag" class="diff-banner">Diferença: --</div>
+                            </div>
+                            
+                            <div class="flex-grow flex items-center justify-center relative">
+                                <div class="w-full h-full max-h-[340px]">
+                                    <canvas id="pizzaChart"></canvas>
+                                </div>
+                                
+                                <div id="pizzaAvatars" class="absolute inset-0 pointer-events-none">
+                                    <!-- Avatares em posições fixas -->
+                                </div>
+                            </div>
+                            <div class="mt-4 px-4 text-center">
+                                <p class="text-[10px] md:text-xs text-zinc-400 font-bold uppercase tracking-tight">
+                                    João Campos e Raquel Lyra disputam o guia eleitoral segundo a segundo
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- CANAL 03: RANKING -->
+                        <div id="pane3" class="view-pane">
+                            <h2 class="text-sm md:text-xl font-black text-white italic mb-6 uppercase tracking-widest">Canal 03: Detalhamento</h2>
+                            <div id="rankList" class="flex-grow overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                <!-- Lista via JS -->
+                            </div>
+                        </div>
+
+                        <div class="instruction-footer">Troque os canais no painel ao lado</div>
+                    </div>
+                </div>
+
+                <div class="flex md:flex-col gap-4 items-center justify-center bg-black/50 p-5 rounded-[2.5rem] border border-white/5">
+                    <button onclick="changeTo(1)" id="b1" class="channel-btn active">
+                        <span class="text-[10px] opacity-40">CH</span>
+                        <span class="text-xl font-black">01</span>
+                    </button>
+                    <button onclick="changeTo(2)" id="b2" class="channel-btn">
+                        <span class="text-[10px] opacity-40">CH</span>
+                        <span class="text-xl font-black">02</span>
+                    </button>
+                    <button onclick="changeTo(3)" id="b3" class="channel-btn">
+                        <span class="text-[10px] opacity-40">CH</span>
+                        <span class="text-xl font-black">03</span>
+                    </button>
+                    
+                    <div class="hidden md:flex flex-col gap-3 mt-8 opacity-10">
+                        <div class="w-12 h-1.5 bg-white rounded-full"></div>
+                        <div class="w-12 h-1.5 bg-white rounded-full"></div>
+                        <div class="w-12 h-1.5 bg-white rounded-full"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const parties = [
+            { name: "União Brasil-PP", sec: 148.19, code: "UB-PP", align: "raquel", color: "#1d4ed8" },
+            { name: "PL", sec: 134.98, code: "PL", align: "none", color: "#4b5563" },
+            { name: "PT-PCdoB-PV", sec: 119.05, code: "FED.PT", align: "joao", color: "#facc15" },
+            { name: "MDB", sec: 59.54, code: "MDB", align: "joao", color: "#fde047" },
+            { name: "PSD", sec: 59.54, code: "PSD", align: "raquel", color: "#2563eb" },
+            { name: "Republicanos", sec: 56.89, code: "REP", align: "joao", color: "#eab308" },
+            { name: "PSDB-Cidadania", sec: 31.72, code: "PSDB", align: "raquel", color: "#3b82f6" },
+            { name: "Podemos", sec: 27.77, code: "POD", align: "raquel", color: "#60a5fa" },
+            { name: "PDT", sec: 26.42, code: "PDT", align: "joao", color: "#ca8a04" },
+            { name: "PSOL-Rede", sec: 23.78, code: "PSOL", align: "ivan", color: "#a855f7" },
+            { name: "PSB", sec: 23.78, code: "PSB", align: "joao", color: "#fbbf24" },
+            { name: "PRD-Solidariedade", sec: 22.48, code: "PRD-S", align: "raquel", color: "#374151" },
+            { name: "Avante", sec: 13.21, code: "AVANTE", align: "raquel", color: "#93c5fd" }
+        ];
+
+        let myChart;
+
+        function format(s) {
+            const m = Math.floor(s / 60);
+            const r = Math.round(s % 60);
+            return `${m}m ${r}s`;
+        }
+
+        function changeTo(ch) {
+            document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('b' + ch).classList.add('active');
+            
+            document.querySelectorAll('.view-pane').forEach(v => v.classList.remove('active'));
+            document.getElementById('pane' + ch).classList.add('active');
+
+            if (ch === 1) launchParticles();
+            if (ch === 2) renderPizza();
+            if (ch === 3) renderTable();
+        }
+
+        function renderPizza() {
+            if(myChart) myChart.destroy();
+            const ctx = document.getElementById('pizzaChart').getContext('2d');
+            
+            const sums = {
+                joao: parties.filter(p => p.align === 'joao').reduce((a, b) => a + b.sec, 0),
+                raquel: parties.filter(p => p.align === 'raquel').reduce((a, b) => a + b.sec, 0),
+                ivan: parties.filter(p => p.align === 'ivan').reduce((a, b) => a + b.sec, 0),
+                none: parties.filter(p => p.align === 'none').reduce((a, b) => a + b.sec, 0)
+            };
+
+            const diff = Math.abs(sums.joao - sums.raquel).toFixed(0);
+            document.getElementById('diffTag').innerText = `Diferença: ${diff}s`;
+
+            myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['João Campos', 'Raquel Lyra', 'Ivan Moraes', 'Independentes (PL)'],
+                    datasets: [{
+                        data: [sums.joao, sums.raquel, sums.ivan, sums.none],
+                        backgroundColor: ['#facc15', '#1d4ed8', '#a855f7', '#334155'],
+                        borderWidth: 2,
+                        borderColor: '#000',
+                        hoverOffset: 15
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart',
+                        onComplete: () => setupPizzaAvatars()
+                    }
+                }
+            });
+        }
+
+        function setupPizzaAvatars() {
+            const container = document.getElementById('pizzaAvatars');
+            container.innerHTML = '';
+            
+            const list = [
+                { name: 'João', color: '#facc15', img: 'joao-campos.jpg', ph: 'JC', pos: { top: '8%', right: '10%' } },
+                { name: 'Raquel', color: '#1d4ed8', img: 'raquel-lyra.webp', ph: 'RL', pos: { bottom: '5%', left: '10%' } },
+                { name: 'Ivan', color: '#a855f7', img: 'ivan-moraes.jpeg', ph: 'IM', pos: { top: '5%', left: '10%' } }
+            ];
+
+            list.forEach((c, idx) => {
+                const el = document.createElement('div');
+                el.className = 'avatar-label';
+                el.style.top = c.pos.top || 'auto';
+                el.style.bottom = c.pos.bottom || 'auto';
+                el.style.left = c.pos.left || 'auto';
+                el.style.right = c.pos.right || 'auto';
+                
+                el.innerHTML = `
+                    <img src="${c.img}" class="avatar-img" style="border-color:${c.color}" onerror="this.src='https://placehold.co/100x100/${c.color.replace('#','')}/fff?text=${c.ph}'">
+                    <span class="text-[10px] font-black uppercase mt-1 px-2 py-0.5 rounded bg-black/90 border border-white/10" style="color:${c.color}">${c.name}</span>
+                `;
+                container.appendChild(el);
+                setTimeout(() => el.classList.add('show'), 150 * idx);
+            });
+        }
+
+        function launchParticles() {
+            const container = document.getElementById('particleCanvas');
+            const screen = container.getBoundingClientRect();
+            
+            if (screen.width === 0) {
+                setTimeout(launchParticles, 100);
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            const targets = {
+                joao: document.getElementById('box-joao').getBoundingClientRect(),
+                raquel: document.getElementById('box-raquel').getBoundingClientRect(),
+                ivan: document.getElementById('box-ivan').getBoundingClientRect(),
+                none: document.getElementById('box-none').getBoundingClientRect()
+            };
+
+            const counters = { joao: 0, raquel: 0, ivan: 0, none: 0 };
+
+            parties.forEach((p, i) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'party-bubble';
+                bubble.innerText = p.code;
+                bubble.style.backgroundColor = p.color;
+                bubble.style.color = (p.align === 'joao' || p.align === 'raquel') ? '#fff' : '#fff';
+                if(p.align === 'joao') bubble.style.color = '#000';
+                
+                bubble.style.left = (Math.random() * 80 + 10) + '%';
+                bubble.style.top = '110%';
+                bubble.style.opacity = '0';
+
+                container.appendChild(bubble);
+
+                setTimeout(() => {
+                    const target = targets[p.align];
+                    const x = (target.left + target.width / 2) - screen.left + (Math.random() - 0.5) * 40;
+                    const y = 15 + (Math.random() * 80);
+
+                    bubble.style.left = x + 'px';
+                    bubble.style.top = y + 'px';
+                    bubble.style.opacity = '1';
+                    
+                    counters[p.align] += p.sec;
+                    updateDashboard(counters);
+                }, i * 140);
+            });
+        }
+
+        function updateDashboard(c) {
+            document.getElementById('sum-joao').innerText = format(c.joao);
+            document.getElementById('sum-raquel').innerText = format(c.raquel);
+            document.getElementById('sum-ivan').innerText = format(c.ivan);
+            document.getElementById('sum-none').innerText = format(c.none);
+        }
+
+        function renderTable() {
+            const list = document.getElementById('rankList');
+            list.innerHTML = '';
+            parties.sort((a,b) => b.sec - a.sec).forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 hover:bg-white/10 transition-colors';
+                const label = p.align === 'none' ? 'Independente' : 'Aliado ' + p.align;
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-1.5 h-8 rounded-full" style="background:${p.color}"></div>
+                        <div>
+                            <div class="text-[8px] font-black uppercase text-zinc-500">${label}</div>
+                            <div class="text-xs font-bold text-white">${p.name}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-black text-[#f83d03]">${format(p.sec)}</div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        window.onload = () => {
+            setTimeout(launchParticles, 600);
+        };
+    </script>
+</body>
+</html>
